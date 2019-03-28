@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>My Google Map</title>
+
+  <style>
+    #map{
+      height:400px;
+      width:100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>My Google Map</h1>
+  <div id="map"></div>
+  <script>
+    function initMap(){
+      // Map options
+      var options = {
+        zoom:8,
+        center:{lat:42,lng:-71},
+        mapTypeId: 'terrain'
+      }
+
+      // New map
+      var map = new google.maps.Map(document.getElementById('map'), options);
+
+      var control = 0;
+      var marker;
+      var circle;
+      // Listen for click on map
+      google.maps.event.addListener(map, 'click', function(event){
+        // Add marker
+        addMarkerr({coords:event.latLng});
+        addCircle({coords:event.latLng},50000);
+        isInCircle({coords:event.latLng});
+      });
+
+      function addMarkerr(props){
+        if(control == 0){
+          control = 1;
+          marker = new google.maps.Marker({
+            position:props.coords,
+            map:map,
+          });
+        }else{
+          marker.setPosition(props.coords);
+        }
+
+
+      }
+
+      function addCircle(props,radius){
+        if(control == 1){
+          control = 2;
+          circle = new google.maps.Circle({
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#FF0000',
+            fillOpacity: 0.35,
+            map:map,
+            center: props.coords,
+            radius: radius
+          });
+        }else{
+          circle.setCenter(props.coords);
+        }
+      }
+
+      function isInCircle(props){
+        if (google.maps.geometry.spherical.computeDistanceBetween(circle.getCenter() , new google.maps.LatLng(props.coords.lat(),props.coords.lng())) <= circle.getRadius()) {
+            console.log(google.maps.geometry.spherical.computeDistanceBetween(circle.getCenter() , new google.maps.LatLng(props.coords.lat(),props.coords.lng())) +
+            '\ncoords-X:' + props.coords.lat() +
+            '\ncoords-Y:' + props.coords.lng() +
+            '\ncoords:' + props.coords +
+            '\ncircleCenter:' + circle.getCenter() +
+            '\n=> is in searchArea');
+        } else {
+            console.log('=> is NOT in searchArea');
+        }
+
+        /* TRY BLOG START
+        var service = new google.maps.DistanceMatrixService();
+        service.getDistanceMatrix(
+          {
+            origins: [props.coords.lat(), props.coords.lng()],
+            destinations: [circle.getCenter(), origins],
+            travelMode: 'DRIVING',
+            transitOptions: TransitOptions,
+            drivingOptions: DrivingOptions,
+            unitSystem: UnitSystem,
+            avoidHighways: Boolean,
+            avoidTolls: Boolean,
+          }, callback);
+
+        function callback(response, status) {
+          if (status == 'OK') {
+            var origins = response.originAddresses;
+            var destinations = response.destinationAddresses;
+
+            for (var i = 0; i < origins.length; i++) {
+              var results = response.rows[i].elements;
+              for (var j = 0; j < results.length; j++) {
+                var element = results[j];
+                var distance = element.distance.text;
+                var duration = element.duration.text;
+                var from = origins[i];
+                var to = destinations[j];
+                console.log('>>' + i + ' ' + j + '\ndistance:' + distance);
+              }
+            }
+          }
+        }
+        TRY BLOG END */
+
+      }
+
+
+    }
+  </script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDqoFdzU1hZ5AhyOwqAAjy0GVTcgBDfTFk&callback=initMap&libraries=geometry"></script>
+</body>
+</html>
