@@ -12,50 +12,65 @@
       width:100%;
     }
   </style>
-</head>
+  
+  </head>
 <body>
   <h1>My Google Map</h1>
+  <div id="result"></div>
   <div id="map"></div>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDqoFdzU1hZ5AhyOwqAAjy0GVTcgBDfTFk&callback=initMap&libraries=geometry"></script>
   <script>
-    function initMap(){
-      // Map options
+	//var marker = null;
+    window.addEventListener('load', function() {
+	  var marker = null
+	  var circle = null
       var options = {
         zoom:8,
-        center:{lat:42,lng:-71},
+        center:{lat:41.01384,lng:28},
         mapTypeId: 'terrain'
       }
-
-      // New map
       var map = new google.maps.Map(document.getElementById('map'), options);
-
-      var control = 0;
-      var marker;
-      var circle;
-      // Listen for click on map
+ 
+      var positionCamedFromDatabase = {lat: 41.01384, lng: 28.94966}
+      var myPosition = {lat: -25.363, lng: 131.044};
+      marker = getMarker(null, map, myPosition);
+      
       google.maps.event.addListener(map, 'click', function(event){
-        // Add marker
-        addMarkerr({coords:event.latLng});
-        addCircle({coords:event.latLng},50000);
-        isInCircle({coords:event.latLng});
+		  var position = { lat: event.latLng.lat(), lng: event.latLng.lng() }
+          getMarker(marker, map, position)
+          circle = addCircle(circle, map, position, 20000);
+          var result = isInCircle(circle, positionCamedFromDatabase);
+          var htmlResult = document.getElementById('result');
+          if(result)
+			htmlResult.innerHTML = '<span style="color:green">Hedef konumda</span>';
+		  else
+			htmlResult.innerHTML = '<span style="color:red">Hedef konumda değil</span>';
       });
 
-      function addMarkerr(props){
-        if(control == 0){
-          control = 1;
-          marker = new google.maps.Marker({
-            position:props.coords,
+    });
+    
+    function getMarker(marker, map, pos) {
+		if(marker == null) {
+			marker = new google.maps.Marker({
+            position:pos,
             map:map,
           });
-        }else{
-          marker.setPosition(props.coords);
-        }
+		}
+		marker.setPosition(pos)
+		return marker;
+	}
+    
+    function isInCircle(circle, targetPosition) {
+		console.log(targetPosition)
+		var location = new google.maps.LatLng(targetPosition.lat,targetPosition.lng)
+		if (google.maps.geometry.spherical.computeDistanceBetween(circle.getCenter() , location) <= circle.getRadius())
+            return true;
+        else
+            return false;
+	}
 
-
-      }
-
-      function addCircle(props,radius){
-        if(control == 1){
-          control = 2;
+	function addCircle(circle, map, pos, radius){
+        if(circle == null){
           circle = new google.maps.Circle({
             strokeColor: '#FF0000',
             strokeOpacity: 0.8,
@@ -63,65 +78,20 @@
             fillColor: '#FF0000',
             fillOpacity: 0.35,
             map:map,
-            center: props.coords,
+            center: pos,
             radius: radius
           });
         }else{
-          circle.setCenter(props.coords);
+          circle.setCenter(pos);
         }
-      }
-
-      function isInCircle(props){
-        if (google.maps.geometry.spherical.computeDistanceBetween(circle.getCenter() , new google.maps.LatLng(props.coords.lat(),props.coords.lng())) <= circle.getRadius()) {
-            console.log(google.maps.geometry.spherical.computeDistanceBetween(circle.getCenter() , new google.maps.LatLng(props.coords.lat(),props.coords.lng())) +
-            '\ncoords-X:' + props.coords.lat() +
-            '\ncoords-Y:' + props.coords.lng() +
-            '\ncoords:' + props.coords +
-            '\ncircleCenter:' + circle.getCenter() +
-            '\n=> is in searchArea');
-        } else {
-            console.log('=> is NOT in searchArea');
-        }
-
-        /* TRY BLOG START
-        var service = new google.maps.DistanceMatrixService();
-        service.getDistanceMatrix(
-          {
-            origins: [props.coords.lat(), props.coords.lng()],
-            destinations: [circle.getCenter(), origins],
-            travelMode: 'DRIVING',
-            transitOptions: TransitOptions,
-            drivingOptions: DrivingOptions,
-            unitSystem: UnitSystem,
-            avoidHighways: Boolean,
-            avoidTolls: Boolean,
-          }, callback);
-
-        function callback(response, status) {
-          if (status == 'OK') {
-            var origins = response.originAddresses;
-            var destinations = response.destinationAddresses;
-
-            for (var i = 0; i < origins.length; i++) {
-              var results = response.rows[i].elements;
-              for (var j = 0; j < results.length; j++) {
-                var element = results[j];
-                var distance = element.distance.text;
-                var duration = element.duration.text;
-                var from = origins[i];
-                var to = destinations[j];
-                console.log('>>' + i + ' ' + j + '\ndistance:' + distance);
-              }
-            }
-          }
-        }
-        TRY BLOG END */
-
-      }
-
-
-    }
-  </script>
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDqoFdzU1hZ5AhyOwqAAjy0GVTcgBDfTFk&callback=initMap&libraries=geometry"></script>
+        return circle;
+	}
+    /*
+    window.addEventListener('load', function() {
+		initMap();
+	});*/
+	
+</script>
+  
 </body>
 </html>
