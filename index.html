@@ -12,86 +12,158 @@
       width:100%;
     }
   </style>
-  
-  </head>
+
+</head>
+
+
 <body>
-  <h1>My Google Map</h1>
-  <div id="result"></div>
-  <div id="map"></div>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDqoFdzU1hZ5AhyOwqAAjy0GVTcgBDfTFk&callback=initMap&libraries=geometry"></script>
-  <script>
-	//var marker = null;
-    window.addEventListener('load', function() {
-	  var marker = null
-	  var circle = null
-      var options = {
-        zoom:8,
-        center:{lat:41.01384,lng:28},
-        mapTypeId: 'terrain'
-      }
-      var map = new google.maps.Map(document.getElementById('map'), options);
- 
-      var positionCamedFromDatabase = {lat: 41.01384, lng: 28.94966}
-      var myPosition = {lat: -25.363, lng: 131.044};
-      marker = getMarker(null, map, myPosition);
-      
-      google.maps.event.addListener(map, 'click', function(event){
-		  var position = { lat: event.latLng.lat(), lng: event.latLng.lng() }
-          getMarker(marker, map, position)
-          circle = addCircle(circle, map, position, 20000);
-          var result = isInCircle(circle, positionCamedFromDatabase);
-          var htmlResult = document.getElementById('result');
-          if(result)
-			htmlResult.innerHTML = '<span style="color:green">Hedef konumda</span>';
-		  else
-			htmlResult.innerHTML = '<span style="color:red">Hedef konumda değil</span>';
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDqoFdzU1hZ5AhyOwqAAjy0GVTcgBDfTFk&libraries=geometry"></script>
+
+Arama Terimi: <input type="text" id="searchField"><br>
+<!--Alan(km): <input type="text" id="radius"><br>-->
+
+<select id="categoryCombobox">
+    <option value="volvo">Volvo</option>
+    <option value="araba">Arabaa</option>
+    <option value="mercedes">Mercedes</option>
+    <option value="audi">Audi</option>
+</select>
+
+<p id="description">Ürünün DB'den gelen açıklamasıdır. Bu açıklama içerisinde kelime araması yapılmaktadır.
+  Araba, gömlek gibi kelimelerin search alanına yazılmasının ardından haritaya tıklandığında etkili olacaktır.</p>
+
+<h1>My Google Map</h1>
+<div id="result"></div>
+<div id="map"></div>
+
+<script>
+  /* Load Anında Çalışır */
+  window.addEventListener('load', function() {
+    var marker = null
+    var circle = null
+    var searchText = null;
+    var selectedCategory = null;
+    var descriptionCamedFromDB = null;
+    var myRadius = 5;
+
+
+    /* Harita Ayarları */
+    var options = {
+      zoom:10,
+      center:{lat: 40.408082, lng: 49.878118},
+      mapTypeId: 'terrain'
+    }
+
+    /* Haritanın HTML alanına atanması/gösterilmesi */
+    var map = new google.maps.Map(document.getElementById('map'), options);
+
+
+    var positionCamedFromDatabase = {lat: 40.331446, lng: 49.824706}
+    var firstPosition = {lat: 40.408082, lng: 49.878118};
+    var categoryCamedFromDB = "Araba";
+
+    /* Marker'a Değer Atama İşlemi */
+    marker = getMarker(null, map, firstPosition);
+
+    /* Haritaya Tıklandığın Çalışacak */
+    google.maps.event.addListener(map, 'click', function(event){
+      /* Değişkenlere Değer Atama İşlemleri */
+      searchText = document.getElementById("searchField").value;
+      selectedCategory = document.getElementById("categoryCombobox").options[document.getElementById("categoryCombobox").selectedIndex].value;
+      descriptionCamedFromDB = document.getElementById("description").innerHTML;
+      //myRadius = document.getElementById("radius").value;
+      myRadius = 5;
+      //console.log('radius > ' + myRadius*1000)
+
+      /* Tıkladığımızda Elde Ettiğimiz Koordinat Bilgisi */
+      var position = { lat: event.latLng.lat(), lng: event.latLng.lng() }
+
+      /* Tıkladığımız Noktaya Marker Koyma İşlemi */
+      getMarker(marker, map, position)
+
+      /* Tıkladığımız Noktaya Çember Koyma İşlemi */
+      circle = addCircle(circle, map, position, myRadius );
+
+      /* DB'den Gelen Kategori Bilgisinin Karşılaştırılması */
+      var categoryResult = isCategoryMatched(selectedCategory, categoryCamedFromDB);
+      console.log('categoryResult > ' + categoryResult)
+
+      /* DB'den Gelen Location Bilgisinin Çemberin İçerisinde Olup Olmadığının Kontrolü */
+      var circleResult = isInCircle(circle, positionCamedFromDatabase);
+      console.log('result > ' + circleResult)
+
+      /* Kategori Bilgisi Kontrolü */
+      var searchTextResult = false;
+      if( searchText.trim() != "" )
+        searchTextResult = isDescriptionContainSearchText(searchText, descriptionCamedFromDB);
+      console.log('searchTextResult > ' + searchTextResult)
+
+      /* Sonuca Göre İşlem Yapma Aşaması */
+      var htmlResult = document.getElementById('result');
+      if((searchText.trim() == "" && categoryResult && circleResult) || (searchTextResult && categoryResult && circleResult) )
+    	  htmlResult.innerHTML = '<span style="color:green">Hedef konumda</span>';
+      else
+    	  htmlResult.innerHTML = '<span style="color:red">Hedef konumda değil</span>';
       });
 
-    });
-    
-    function getMarker(marker, map, pos) {
-		if(marker == null) {
-			marker = new google.maps.Marker({
-            position:pos,
-            map:map,
-          });
-		}
-		marker.setPosition(pos)
-		return marker;
-	}
-    
-    function isInCircle(circle, targetPosition) {
-		console.log(targetPosition)
-		var location = new google.maps.LatLng(targetPosition.lat,targetPosition.lng)
-		if (google.maps.geometry.spherical.computeDistanceBetween(circle.getCenter() , location) <= circle.getRadius())
-            return true;
-        else
-            return false;
-	}
+  });
 
-	function addCircle(circle, map, pos, radius){
-        if(circle == null){
-          circle = new google.maps.Circle({
-            strokeColor: '#FF0000',
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-            fillColor: '#FF0000',
-            fillOpacity: 0.35,
-            map:map,
-            center: pos,
-            radius: radius
-          });
-        }else{
-          circle.setCenter(pos);
-        }
-        return circle;
+function getMarker(marker, map, pos) {
+	if(marker == null) {
+		marker = new google.maps.Marker({
+          position:pos,
+          map:map,
+        });
 	}
+	marker.setPosition(pos)
+	return marker;
+}
+
+function addCircle(circle, map, pos, radius){
+  if(circle == null){
+    circle = new google.maps.Circle({
+      strokeColor: '#FF0000',
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: '#FF0000',
+      fillOpacity: 0.35,
+      map:map,
+      center: pos,
+      radius: parseInt(radius*1000)
+    });
+  }else{
+    circle.setCenter(pos);
+  }
+  return circle;
+}
+
+function isCategoryMatched(selectedCategory, categoryCamedFromDB){
+  return areEqual = selectedCategory.toLowerCase() === categoryCamedFromDB.toLowerCase()
+}
+
+function isInCircle(circle, targetPosition) {
+	console.log(targetPosition)
+	var location = new google.maps.LatLng(targetPosition.lat,targetPosition.lng)
+	if (google.maps.geometry.spherical.computeDistanceBetween(circle.getCenter() , location) <= circle.getRadius())
+    return true;
+  else
+    return false;
+}
+
+function isDescriptionContainSearchText(searchText, descriptionCamedFromDB){
+  var result = descriptionCamedFromDB.includes(searchText);
+  return result;
+}
+
+
+
     /*
     window.addEventListener('load', function() {
 		initMap();
 	});*/
-	
+
 </script>
-  
+
 </body>
 </html>
