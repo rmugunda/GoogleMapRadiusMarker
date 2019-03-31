@@ -21,7 +21,7 @@
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDqoFdzU1hZ5AhyOwqAAjy0GVTcgBDfTFk&libraries=geometry"></script>
 
 Arama Terimi: <input type="text" id="searchField"><br>
-<!--Alan(km): <input type="text" id="radius"><br>-->
+Alan(km): <input type="text" id="radius"><br>
 
 <select id="categoryCombobox">
     <option value="volvo">Volvo</option>
@@ -47,7 +47,6 @@ Arama Terimi: <input type="text" id="searchField"><br>
     var descriptionCamedFromDB = null;
     var myRadius = 5;
 
-
     /* Harita Ayarları */
     var options = {
       zoom:10,
@@ -68,13 +67,12 @@ Arama Terimi: <input type="text" id="searchField"><br>
 
     /* Haritaya Tıklandığın Çalışacak */
     google.maps.event.addListener(map, 'click', function(event){
+
       /* Değişkenlere Değer Atama İşlemleri */
       searchText = document.getElementById("searchField").value;
       selectedCategory = document.getElementById("categoryCombobox").options[document.getElementById("categoryCombobox").selectedIndex].value;
       descriptionCamedFromDB = document.getElementById("description").innerHTML;
-      //myRadius = document.getElementById("radius").value;
-      myRadius = 5;
-      //console.log('radius > ' + myRadius*1000)
+      myRadius = document.getElementById("radius").value;
 
       /* Tıkladığımızda Elde Ettiğimiz Koordinat Bilgisi */
       var position = { lat: event.latLng.lat(), lng: event.latLng.lng() }
@@ -121,6 +119,7 @@ function getMarker(marker, map, pos) {
 }
 
 function addCircle(circle, map, pos, radius){
+  console.log('radius > ' + radius*1000)
   if(circle == null){
     circle = new google.maps.Circle({
       strokeColor: '#FF0000',
@@ -133,6 +132,7 @@ function addCircle(circle, map, pos, radius){
       radius: parseInt(radius*1000)
     });
   }else{
+    circle.setRadius(radius*1000);
     circle.setCenter(pos);
   }
   return circle;
